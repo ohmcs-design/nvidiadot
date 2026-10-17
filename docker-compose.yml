@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  dot-ai:
+    build: .
+    container_name: dot-ai-ide
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8765:8765"
+    environment:
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
+      - NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+      - DEFAULT_PLANNER_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b
+      - DEFAULT_CODER_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b
+    volumes:
+      # Mount your local project code into /workspace inside the container
+      # On host, create a folder named 'workspace' or change this path to any project folder on your PC
+      - ./workspace:/workspace

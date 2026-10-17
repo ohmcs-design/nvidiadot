@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+__pycache__
+*.py[cod]
+*$py.class
+*.db
+*.sqlite3
+.venv
+env/
+venv/
+cool.txt

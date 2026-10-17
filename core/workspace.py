@@ -143,7 +143,10 @@ class WorkspaceManager:
         if not self.has_workspace:
             return []
 
-        exe_path = config.NATIVE_DIR / "fast_search.exe"
+        exe_name = "fast_search.exe" if os.name == "nt" else "fast_search_linux"
+        exe_path = config.NATIVE_DIR / exe_name
+        if not exe_path.exists() and os.name != "nt":
+            exe_path = config.NATIVE_DIR / "fast_search"
         results = []
 
         if exe_path.exists():

@@ -33,10 +33,19 @@ A folder-first, local-first AI Code Editor desktop application inspired by the *
 
 ## 🚀 How to Launch
 
+### Option 1: Native Desktop App (Windows)
 Double-click `run_editor.bat` or run:
 ```bash
 python desktop_app.py
 ```
+
+### Option 2: Docker / Browser Mode (Windows, Mac, Linux)
+Run with Docker Compose:
+```bash
+docker-compose up --build
+```
+Then open **http://localhost:8080** in your browser!
+For full details, see the [Docker Guide](DOCKER_GUIDE.md).
 
 ### Adding your NVIDIA API Key
 1. Click the **NVIDIA API** button in the top right header.

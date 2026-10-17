@@ -43,8 +43,17 @@ class DesktopAPIBridge:
         self.scheduler = Scheduler(self.planner, self.worker_runtime, self.store)
         self.chat_agent = ChatAgent(self.nvidia, self.workspace, self.approval_gate, self.terminal, self.web_inspector)
 
+        # Event listeners for web/Docker streaming
+        self.event_listeners = []
+
         # Wire scheduler events to UI
         self.scheduler.add_listener(self._on_scheduler_event)
+
+        # In Docker / container mode, auto-detect /workspace
+        ws_container = Path("/workspace")
+        if ws_container.exists():
+            self.workspace.set_root(str(ws_container.resolve()))
+            self.terminal.set_cwd(ws_container)
 
     def _run_event_loop(self):
         asyncio.set_event_loop(self._loop)
@@ -58,13 +67,31 @@ class DesktopAPIBridge:
     def set_window(self, window):
         self.window = window
 
-    def _on_scheduler_event(self, event: Dict[str, Any]):
+    def add_event_listener(self, callback):
+        self.event_listeners.append(callback)
+
+    def remove_event_listener(self, callback):
+        if callback in self.event_listeners:
+            self.event_listeners.remove(callback)
+
+    def emit_event(self, event_type: str, data: Any):
+        """Broadcast events to both pywebview desktop window and Web/Docker clients"""
         if self.window:
-            js_code = f"if (window.onDotEvent) {{ window.onDotEvent({json.dumps(event)}); }}"
+            js_fn = "onChatEvent" if event_type == "chat" else "onDotEvent"
+            js_code = f"if (window.{js_fn}) {{ window.{js_fn}({json.dumps(data)}); }}"
             try:
                 self.window.evaluate_js(js_code)
             except Exception:
                 pass
+
+        for listener in list(self.event_listeners):
+            try:
+                listener(event_type, data)
+            except Exception:
+                pass
+
+    def _on_scheduler_event(self, event: Dict[str, Any]):
+        self.emit_event("dot", event)
 
     # Workspace Methods
     def get_workspace_info(self) -> Dict[str, Any]:
@@ -82,19 +109,28 @@ class DesktopAPIBridge:
             "terminal_cwd": str(self.terminal.cwd)
         }
 
-    def pick_folder(self) -> Dict[str, Any]:
-        """Open native Windows folder dialog"""
-        if not self.window:
-            return {"success": False, "error": "No window"}
-        result = self.window.create_file_dialog(webview.FOLDER_DIALOG)
-        if result and len(result) > 0:
-            folder = result[0]
+    def pick_folder(self, target_folder: Optional[str] = None) -> Dict[str, Any]:
+        """Open native Windows folder dialog or set specified folder"""
+        folder = target_folder
+        if not folder:
+            if self.window:
+                result = self.window.create_file_dialog(webview.FOLDER_DIALOG)
+                if result and len(result) > 0:
+                    folder = result[0]
+            else:
+                ws_container = Path("/workspace")
+                if ws_container.exists():
+                    folder = str(ws_container.resolve())
+                else:
+                    folder = str(config.ROOT_DIR)
+
+        if folder:
             self.workspace.set_root(folder)
             self.terminal.set_cwd(Path(folder))
             if self.local_server.is_running:
                 self.local_server.stop()
             self.local_server = LocalPreviewServer(folder)
-            return {"success": True, "has_folder": True, "path": folder, "name": Path(folder).name, "terminal_cwd": folder}
+            return {"success": True, "has_folder": True, "path": folder, "name": Path(folder).name or folder, "terminal_cwd": folder}
         return {"success": False, "cancelled": True}
 
     def get_file_tree(self) -> List[Dict[str, Any]]:
@@ -202,19 +238,10 @@ class DesktopAPIBridge:
         crawl_url: Optional[str] = None
     ):
         async for chunk in self.chat_agent.chat_stream(message, active_file, image_url, crawl_url):
-            if self.window:
-                js_code = f"if (window.onChatEvent) {{ window.onChatEvent({json.dumps(chunk)}); }}"
-                try:
-                    self.window.evaluate_js(js_code)
-                except Exception:
-                    pass
+            self.emit_event("chat", chunk)
 
         # Signal done
-        if self.window:
-            try:
-                self.window.evaluate_js("if (window.onChatEvent) { window.onChatEvent({type: 'done'}); }")
-            except Exception:
-                pass
+        self.emit_event("chat", {"type": "done"})
         return {"success": True}
 
     def apply_chat_action(self, req_id: str) -> Dict[str, Any]:

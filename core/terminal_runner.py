@@ -91,12 +91,16 @@ class TerminalRunner:
                     "cwd": str(self.cwd)
                 }
 
+        is_windows = os.name == "nt"
+        if is_windows:
+            shell_exec = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_str]
+        else:
+            shell_bin = "/bin/bash" if Path("/bin/bash").exists() else "/bin/sh"
+            shell_exec = [shell_bin, "-c", cmd_str]
+
         try:
             proc = await asyncio.create_subprocess_exec(
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-Command", cmd_str,
+                *shell_exec,
                 cwd=str(self.cwd),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
