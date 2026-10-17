@@ -43,3 +43,10 @@ python desktop_app.py
 2. Enter your key (starts with `nvapi-...`).
 3. Click **Test Connection** and **Save Settings**.
    *(Your key is stored securely in your local `.env` file)*.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
