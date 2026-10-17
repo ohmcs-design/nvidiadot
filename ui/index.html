@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOT AI - Autonomous Code Editor</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <span>DOT AI</span>
+      <span class="logo-badge">NVIDIA NIM</span>
+      <div id="btn-open-folder" class="workspace-badge" title="Click to open another folder">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span id="current-folder-name">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Native C Fast Search Bar -->
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px; opacity:0.6;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="global-search-input" placeholder="Search workspace (Native C Fast Grep)...">
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-toggle-sidebar" class="btn" title="Toggle File Explorer (Hide/Show)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        Files
+      </button>
+
+      <button id="btn-toggle-terminal" class="btn" title="Toggle Workspace Terminal (Ctrl+`)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Terminal
+      </button>
+
+      <button id="btn-toggle-chat" class="btn" title="Toggle AI Copilot & Chat Panel">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Copilot
+      </button>
+
+      <button id="btn-save-file" class="btn btn-accent" title="Save File (Ctrl+S)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save
+      </button>
+
+      <button id="btn-settings" class="btn btn-nvidia">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        NVIDIA API
+      </button>
+    </div>
+  </header>
+
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- Left: File Explorer -->
+    <div class="sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <span>Files</span>
+        <div style="display:flex; gap:4px;">
+          <button id="btn-sidebar-new-file" class="btn" style="padding:2px 6px; font-size:11px;" title="New File">＋</button>
+          <button id="btn-refresh-tree" class="btn" style="padding:2px 6px; font-size:11px;" title="Refresh">↻</button>
+        </div>
+      </div>
+      <!-- When no folder is open -->
+      <div id="sidebar-empty-state" style="padding:24px 16px; text-align:center; color:var(--text-muted); display:none;">
+        <div style="font-size:32px; margin-bottom:10px;">📂</div>
+        <div style="font-weight:600; color:var(--text-main); font-size:12px; margin-bottom:4px;">No Folder Opened</div>
+        <div style="font-size:11px; line-height:1.4; margin-bottom:14px;">Select a project folder to view and edit files</div>
+        <button id="btn-sidebar-open-folder" class="btn btn-primary" style="width:100%; justify-content:center; padding:6px 10px; font-size:11px;">
+          📁 Open Folder
+        </button>
+      </div>
+      <!-- File tree list -->
+      <div id="file-tree-container" class="file-tree">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- Resizer: Sidebar / Main Stage -->
+    <div id="resizer-sidebar" class="resizer-col" title="Drag to resize File Explorer"></div>
+
+    <!-- Center: Editor & Terminal & Browser -->
+    <div class="main-stage">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-dark); border-bottom:1px solid var(--border-color); flex-shrink:0;">
+        <div id="tab-bar" class="tab-bar" style="border-bottom:none; flex:1;">
+          <!-- Open tabs will appear here -->
+        </div>
+        <div style="padding:0 8px;">
+          <button id="btn-toggle-browser-tab" class="btn btn-nvidia" style="padding:3px 10px; font-size:11px;" title="Open in-app Live Browser & Inspector">
+            🌐 Live Web Browser & Inspector
+          </button>
+        </div>
+      </div>
+
+      <!-- WELCOME SCREEN (Shown when NO file is opened) -->
+      <div id="welcome-screen" class="welcome-container" style="display:flex;">
+        <div class="welcome-content">
+          <div class="welcome-header">
+            <div class="welcome-badge">NVIDIA NIM</div>
+            <h1 class="welcome-title">DOT AI</h1>
+            <p class="welcome-subtitle">Autonomous AI Code Editor • Powered by <span>NVIDIA Nemotron 3.5 Super VL</span></p>
+          </div>
+
+          <div class="welcome-cards-grid">
+            <div class="welcome-card" id="btn-welcome-open-folder">
+              <div class="welcome-card-icon">📂</div>
+              <div class="welcome-card-title">Open Folder</div>
+              <div class="welcome-card-desc">Choose a workspace folder from your computer to start editing and collaborating with AI.</div>
+            </div>
+
+            <div class="welcome-card" id="btn-welcome-new-file">
+              <div class="welcome-card-icon">📄</div>
+              <div class="welcome-card-title">New File</div>
+              <div class="welcome-card-desc">Quickly create a new Python script, Java class, C file, or web document.</div>
+            </div>
+
+            <div class="welcome-card" id="btn-welcome-chat">
+              <div class="welcome-card-icon">💬</div>
+              <div class="welcome-card-title">Chat & Copilot</div>
+              <div class="welcome-card-desc">Ask questions, explain algorithms, or instruct Nemotron to generate full components.</div>
+            </div>
+
+            <div class="welcome-card" id="btn-welcome-terminal">
+              <div class="welcome-card-icon">💻</div>
+              <div class="welcome-card-title">Integrated Terminal</div>
+              <div class="welcome-card-desc">Run GCC compiler, Java 21, Python, or shell commands directly inside your folder.</div>
+            </div>
+          </div>
+
+          <div class="welcome-footer-info">
+            <div class="welcome-info-col">
+              <div class="welcome-info-heading">⌨️ Shortcuts</div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>`</kbd> <span>Toggle Terminal</span></div>
+              <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>S</kbd> <span>Save Active File</span></div>
+            </div>
+            <div class="welcome-info-col">
+              <div class="welcome-info-heading">🚀 High-Performance Engines</div>
+              <div class="engine-badge-item">⚡ <b>Native C Grep</b> for sub-millisecond search</div>
+              <div class="engine-badge-item">☕ <b>Java 21 AST</b> CodeAnalyzer for semantic analysis</div>
+              <div class="engine-badge-item">🌐 <b>Live Browser</b> multi-page inspector & preview</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor Container (Hidden until a file is opened) -->
+      <div class="editor-container" id="editor-wrapper" style="display:none;">
+        <div id="monaco-editor"></div>
+        <textarea id="editor-fallback" style="display:none;" placeholder="Select a file from the explorer to view or edit..."></textarea>
+      </div>
+
+      <!-- IN-APP LIVE WEB BROWSER & MULTI-PAGE INSPECTOR -->
+      <div id="web-preview-container" style="display:none; flex-direction:column; flex:1; background:#161b22; position:relative;">
+        <!-- Browser Toolbar -->
+        <div class="browser-toolbar" style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:#0d1117; border-bottom:1px solid var(--border-color);">
+          <button id="btn-browser-back" class="btn" style="padding:3px 8px;" title="Back">◀</button>
+          <button id="btn-browser-forward" class="btn" style="padding:3px 8px;" title="Forward">▶</button>
+          <button id="btn-browser-refresh" class="btn" style="padding:3px 8px;" title="Reload">↻</button>
+          
+          <div style="flex:1; display:flex; align-items:center; background:#161b22; border:1px solid var(--border-color); border-radius:6px; padding:3px 10px;">
+            <span style="font-size:11px; opacity:0.6; margin-right:6px;">🌐</span>
+            <input type="text" id="browser-url-input" value="http://127.0.0.1:8765" style="flex:1; background:transparent; border:none; color:#e6edf3; font-size:12px; outline:none;" placeholder="Enter website URL or click Run Local Server..." />
+          </div>
+
+          <button id="btn-browser-go" class="btn btn-primary" style="padding:3px 10px; font-size:11px;">Go</button>
+          <button id="btn-start-local-server" class="btn btn-accent" style="padding:3px 10px; font-size:11px;" title="Serve workspace HTML/JS/CSS locally">🚀 Run Local Server</button>
+          <button id="btn-browser-inspect-nemotron" class="btn btn-nvidia" style="padding:3px 10px; font-size:11px;" title="Crawl multiple pages and send to Nemotron for architectural review">🧠 Inspect Multi-Page</button>
+          <button id="btn-toggle-mobile" class="btn" style="padding:3px 8px; font-size:11px;" title="Toggle Mobile (375px) vs Desktop View">📱 Mobile</button>
+        </div>
+
+        <!-- Browser Viewport Frame -->
+        <div id="browser-viewport-wrapper" style="flex:1; display:flex; justify-content:center; background:#0b0e14; overflow:hidden;">
+          <iframe id="live-browser-frame" src="about:blank" style="width:100%; height:100%; border:none; background:#ffffff;"></iframe>
+        </div>
+      </div>
+
+      <!-- Resizer: Editor / Terminal -->
+      <div id="resizer-terminal" class="resizer-row" title="Drag to resize Terminal"></div>
+
+      <!-- Integrated Terminal (Windows PowerShell Style) -->
+      <div id="workspace-terminal-drawer" class="terminal-drawer">
+        <div class="terminal-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76b900" stroke-width="2.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            <span style="font-weight:700; color:#e6edf3; font-size:11px; letter-spacing:0.5px;">POWERSHELL</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button id="btn-term-git" class="btn" style="padding:2px 7px; font-size:11px;" title="Check git status">git status</button>
+            <button id="btn-term-dir" class="btn" style="padding:2px 7px; font-size:11px;" title="List files">dir</button>
+            <button id="btn-run-gcc" class="btn" style="padding:2px 7px; font-size:11px;" title="Compile C files with GCC">GCC</button>
+            <button id="btn-run-java" class="btn" style="padding:2px 7px; font-size:11px;" title="Compile and run active Java file">Java</button>
+            <button id="btn-run-python" class="btn" style="padding:2px 7px; font-size:11px;" title="Run current file with Python">Python</button>
+            <button id="btn-clear-term" class="btn" style="padding:2px 7px; font-size:11px;" title="Clear Screen (cls)">cls</button>
+            <button id="btn-maximize-term" class="btn" style="padding:2px 7px; font-size:11px;" title="Maximize / Restore Terminal">⛶</button>
+            <button id="btn-close-term" class="btn" style="padding:2px 7px; font-size:11px; color:var(--text-muted);" title="Hide Terminal (Ctrl+`)">✕</button>
+          </div>
+        </div>
+        <div id="pwsh-screen" class="pwsh-screen">
+          <div id="pwsh-history" class="pwsh-history">
+            <div class="pwsh-banner">Windows PowerShell<br>Copyright (C) Microsoft Corporation. All rights reserved.<br><br></div>
+          </div>
+          <div class="pwsh-current-line" id="pwsh-line-container">
+            <span id="pwsh-prompt-label" class="pwsh-prompt">PS C:\&gt;</span>
+            <input type="text" id="terminal-input" class="pwsh-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resizer: Main Stage / Right Panel -->
+    <div id="resizer-chat" class="resizer-col" title="Drag to resize Chat / Workforce Panel"></div>
+
+    <!-- Right: DOT AI Chat & Workforce -->
+    <div class="right-panel" id="app-right-panel">
+      <!-- Right Panel Tab Switcher -->
+      <div class="panel-header" style="padding: 6px 10px; background: var(--bg-darker); border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <button id="tab-btn-chat" class="btn btn-primary" style="flex: 1; padding: 5px 8px; font-size: 11px;">
+            💬 Chat & Copilot
+          </button>
+          <button id="tab-btn-goals" class="btn" style="flex: 1; padding: 5px 8px; font-size: 11px;">
+            🎯 5-Goal Workforce
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW 1: INTERACTIVE CHAT & AGENT -->
+      <div id="view-chat" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+        <div id="chat-messages" class="chat-messages-container">
+          <div class="chat-msg assistant">
+            <div class="chat-avatar">DOT</div>
+            <div class="chat-bubble">
+              Hello! Main aapka <b>DOT AI Copilot</b> hoon, powered by <b>NVIDIA Nemotron 3.5 Super VL</b>.<br><br>
+              Aap mujhse:
+              <ul style="margin: 6px 0 6px 18px; line-height: 1.5;">
+                <li>Baat kar sakte hain ya code samjh sakte hain</li>
+                <li>Bol sakte hain: <i>"Create Student.java with roll and name"</i></li>
+                <li>Bol sakte hain: <i>"Compile this file and test it"</i></li>
+                <li>Direct files create aur edit karwa sakte hain!</li>
+              </ul>
+              Kahiye, aaj kya kaam karna hai?
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-area">
+          <div id="chat-context-badge" style="display:none; font-size:10px; color:var(--text-muted); margin-bottom:4px; align-items:center; gap:4px;">
+            <span>📎 Attached:</span> <b id="chat-active-file-name" style="color:var(--border-focus);"></b>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <textarea id="chat-input" placeholder="Type a message or instruction (e.g. 'Create Calculator.java with add method')..." rows="2"></textarea>
+            <button id="btn-send-chat" class="btn btn-primary" style="padding: 0 14px;">
+              <span>Send</span>
+            </button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+            <span style="font-size:10px; color:var(--text-muted);">NVIDIA Nemotron 3.5 • Thinking On</span>
+            <button id="btn-clear-chat" class="btn" style="padding:1px 6px; font-size:10px;">Clear Chat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: AUTONOMOUS 5-GOAL WORKFORCE -->
+      <div id="view-goals" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            AUTONOMOUS WORKFORCE
+          </div>
+          <span id="active-goal-counter" style="font-size:11px; color:var(--text-muted);">0 / 5 Goals</span>
+        </div>
+
+        <!-- Goal Intake -->
+        <div class="intake-box">
+          <textarea id="goal-input" placeholder="Enter a background goal for autonomous workers..."></textarea>
+          <div class="intake-actions">
+            <span style="font-size:11px; color:var(--text-muted);">NVIDIA DAG Planner</span>
+            <button id="btn-submit-goal" class="btn btn-primary">
+              <span>+ Plan Goal</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Pending Approvals Gate -->
+        <div id="approval-center" style="display:none; padding:10px 14px; background:#362800; border-bottom:1px solid var(--warning);">
+          <div style="font-size:12px; font-weight:700; color:#ffd166; margin-bottom:4px;">Action Approval Required:</div>
+          <div id="approval-title" style="font-size:12px; margin-bottom:8px;"></div>
+          <div style="display:flex; gap:8px;">
+            <button id="btn-view-diff" class="btn btn-primary" style="padding:4px 8px; font-size:11px;">Review Diff</button>
+            <button id="btn-approve-action" class="btn btn-accent" style="padding:4px 8px; font-size:11px;">Approve</button>
+            <button id="btn-reject-action" class="btn" style="padding:4px 8px; font-size:11px; color:var(--danger);">Reject</button>
+          </div>
+        </div>
+
+        <!-- Goals List -->
+        <div id="goals-container" class="goals-list">
+          <!-- Rendered goal cards -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>NVIDIA API & AI Settings</span>
+        <button id="btn-close-settings" class="btn" style="padding:2px 6px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>NVIDIA API Key (from build.nvidia.com)</label>
+          <input type="password" id="settings-api-key" placeholder="nvapi-..." />
+          <small style="color:var(--text-muted); font-size:11px;">Your key is stored locally in your workspace .env file.</small>
+        </div>
+        <div class="form-group">
+          <label>Primary Model (NVIDIA NIM)</label>
+          <select id="settings-planner-model">
+            <option value="nvidia/nemotron-3.5-super-vl-120b-a12b" selected>nvidia/nemotron-3.5-super-vl-120b-a12b (Thinking Enabled)</option>
+            <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
+            <option value="mistralai/codestral-22b-v0.1">mistralai/codestral-22b-v0.1</option>
+            <option value="deepseek-ai/deepseek-r1">deepseek-ai/deepseek-r1</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Code Specialist Model</label>
+          <select id="settings-coder-model">
+            <option value="nvidia/nemotron-3.5-super-vl-120b-a12b" selected>nvidia/nemotron-3.5-super-vl-120b-a12b (Thinking Enabled)</option>
+            <option value="mistralai/codestral-22b-v0.1">mistralai/codestral-22b-v0.1</option>
+            <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
+          </select>
+        </div>
+        <div id="settings-test-result" style="margin-top:10px; font-size:12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-test-nvidia" class="btn">Test Connection</button>
+        <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diff Review Modal -->
+  <div id="diff-modal" class="modal-overlay">
+    <div class="modal-content" style="width:780px;">
+      <div class="modal-header">
+        <span id="diff-modal-title">Review Proposed Changes</span>
+        <button id="btn-close-diff" class="btn" style="padding:2px 6px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <pre id="diff-text" style="font-family:var(--font-mono); font-size:12px; background:#0d1117; color:#c9d1d9; padding:14px; overflow:auto; max-height:400px; white-space:pre-wrap;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-diff-reject" class="btn" style="color:var(--danger);">Reject Changes</button>
+        <button id="btn-diff-approve" class="btn btn-accent">Approve & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Results Modal -->
+  <div id="search-modal" class="modal-overlay">
+    <div class="modal-content" style="width:650px;">
+      <div class="modal-header">
+        <span>Fast C Search Results</span>
+        <button id="btn-close-search" class="btn" style="padding:2px 6px;">✕</button>
+      </div>
+      <div id="search-results-list" class="modal-body" style="max-height:400px;">
+        <!-- Search matches -->
+      </div>
+    </div>
+  </div>
+
+  <script src="js/editor.js"></script>
+  <script src="js/dot_panel.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/browser.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
