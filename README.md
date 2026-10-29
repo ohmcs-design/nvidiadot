@@ -11,8 +11,25 @@
 
 ---
 
+## 📖 Project Description & Vision
+
+Modern AI coding assistants often suffer from three major shortcomings:
+1. **Unformatted Chat Code Dumps**: Large language models frequently paste massive blocks of raw code directly into conversational chat windows, forcing developers to manually scroll, copy, search for target files, and stitch changes by hand.
+2. **Blind Execution Without Verification**: Unsupervised agents often overwrite project files or execute potentially destructive terminal commands with no visual confirmation gate, leading to silent bugs and accidental loss of progress.
+3. **Sluggish Interpreted Tooling**: Most IDE extensions rely strictly on high-level Python or JavaScript directory scrapers that grind to a halt on enterprise codebases containing tens of thousands of files.
+
+**DOT AI (NVIDIA DOT)** was designed from the ground up to address these challenges:
+- **Strict Separation of Talking and Coding**: Conversations are concise and explanatory (1–3 sentences). Code generation is isolated into structured action blocks that the UI renders into compact, 1-click **Approval Action Cards**.
+- **Human-in-the-Loop Diff Gatekeeper**: No file is ever modified and no shell command is executed without your direct authorization. Every change is previewed through a unified side-by-side visual diff modal.
+- **NVIDIA NIM Microservice Intelligence**: Direct integration with cutting-edge open models hosted on NVIDIA NIM, highlighting reasoning models with real-time thinking token streams (Nemotron Super VL, DeepSeek R1).
+- **Native C & Java Acceleration Layer**: Features a compiled Win32 C search engine (`fast_search.exe`) using Win32 API handles for sub-millisecond recursive grepping across huge repositories, paired with a Java AST parser for structural code intelligence.
+- **Dual Desktop & Web Runtime**: Launch as a native Windows desktop GUI application with OS folder pickers (`desktop_app.py`) or as a cross-platform web server with Server-Sent Events (`web_app.py` / Docker).
+
+---
+
 ## 📑 Table of Contents
 
+- [Project Description & Vision](#-project-description--vision)
 - [Key Architecture & Capabilities](#-key-architecture--capabilities)
 - [System Architecture](#-system-architecture)
 - [Project Directory Structure](#-project-directory-structure)

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nvidiadot"
+version = "1.0.0"
+description = "Autonomous AI Code Editor & Software Architect powered by NVIDIA NIM (Nemotron 3.5 Super VL, Codestral, Llama 3.3), Monaco Editor, and native C/Java acceleration."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "ohmcs-design" }
+]
+keywords = [
+    "nvidia",
+    "nvidia-nim",
+    "monaco-editor",
+    "ai-ide",
+    "code-editor",
+    "autonomous-agent",
+    "nemotron",
+    "codestral",
+    "llama3",
+    "deepseek-r1",
+    "pair-programming"
+]
+dependencies = [
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.28.0",
+    "beautifulsoup4>=4.12.0",
+    "trafilatura>=1.6.0",
+    "aiohttp>=3.9.0",
+    "pywebview>=5.0.0"
+]
